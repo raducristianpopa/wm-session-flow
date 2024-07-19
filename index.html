@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>MyNote</title>
+    <title>Web monetization session flow</title>
     <script
       defer
       class="remove"
@@ -11,36 +11,202 @@
     <script class="remove">
       // See: https://respec.org/docs/ for all configuration options
       var respecConfig = {
-        shortName: "my-note",
-        specStatus: "ED", // "WG-NOTE"
+        shortName: "wm-session-flow",
+        specStatus: "base",
         noRecTrack: true,
-        edDraftURI: "https://w3c.github.io/mynote/",
+        edDraftURI: "n/a",
         editors: [
           {
-            name: "Victor Hugo",
-            w3cid: "0000",
+            name: "Alexander Surkov",
+            mailto: "asurkov@igalia.com",
+            company: "Igalia",
+            companyURL: "https://igalia.com/",
+            w3cid: "51089",
+          },
+          {
+            name: "Radu Popa",
+            mailto: "radu@interledger.foundation",
+            company: "Interledger",
+            companyURL: "https://interledger.org/",
           },
         ],
-        group: "webperfs", // find your group at https://respec.org/w3c/groups/
+        authors: [
+          {
+            name: "Alexander Surkov",
+            mailto: "asurkov@igalia.com",
+            company: "Igalia",
+            companyURL: "https://igalia.com/",
+            w3cid: "51089",
+          },
+        ],
         github: {
-          repoURL: "w3c/mynote",
-          branch: "master",
+          repoURL: "asurkov/wm-session-flow",
+          branch: "main",
         },
       };
     </script>
   </head>
   <body>
     <section id="abstract">
-      <p>This is a Note.</p>
+      <p>This specification defines a user wallet integraction and the flow of a web monetization (<abbr title="Web Monetization">WM</abbr>) session in a browser.</p>
     </section>
     <section id="sotd">
-      <p>This is a placeholder document.</p>
+      <p>This is a work-in-progress draft and expected to be integrated with the <a href="https://webmonetization.org/specification/">web monetization specification</a>.</p>
     </section>
-    <section id="purpose">
-      <h2>Purpose</h2>
+    <section id="introduction">
+      <h2>Introduction</h2>
       <p>
-        This is a placeholder. Check the
-        <a href="https://respec.org/docs/">ReSpec documentation</a>.
+        The specification defines the browser implementation for setting up a user wallet and managing the web monetization (WM) session flow. To start using web monetization in a browser, the user must add a wallet to enable web monetization payments while browsing the web. When a user visits and interacts with a web-monetized page, the WM session begins, facilitated through a series of OpenPayments API calls. This document details the procedures and protocols involved.
+      </p>
+    </section>
+    <section id="definitions">
+      <h2>Definitions</h2>
+      <dl>
+        <dt><dfn>Wallet provider</dfn></dt>
+        <dd>A financial entity that supports web monetization by implementing the <a href="https://openpayments.dev/introduction/overview/">OpenPayments API</a>.</dd>
+
+        <dt><dfn>Wallet</dfn></dt>
+        <dd>An account within the [=wallet provider=]</a>.</dd>
+
+        <dt><dfn>Wallet address</dfn></dt>
+        <dd>A URL identifying the [=wallet=].</dd>
+
+        <dt><dfn>User wallet</dfn></dt>
+        <dd>A [=wallet=] that the user connects to the browser.</dd>
+
+        <dt><dfn>User wallet address</dfn></dt>
+        <dd>A [=wallet address=] of the [=user wallet=].</dd>
+
+        <dt><dfn>Authentication server</dfn></dt>
+        <dd>A server of the [=wallet provider=] responsible for verifying the identity of users and authorizing access to resources.</dd>
+
+        <dt><dfn>Resource server</dfn></dt>
+        <dd>A server that stores and manages resources for the [=wallet provider=].</dd>
+
+        <dt><dfn>Asset code</dfn></dt>
+        <dd>A string representing the type of currency the [=wallet=] uses.</dd>
+
+        <dt><dfn>Asset scale</dfn></dt>
+        <dd>An integer that defines the scale (number of decimal places) for the currency in the [=wallet=]. It specifies the minimum amount that can be sent for a single transaction.</dd>
+    </dl>
+    </section>
+    <section id="wallet-setup">
+      <h2>Wallet setup</h2>
+      <p><dfn id="get-wallet-address">Get wallet address request</dfn> is a <a href="#get-wallet-address">GET request</a> to the [=user wallet address=] to retrieve the wallet information such as [=authentication server=], [=resource server=], [=asset code=], and [=asset scale=].</p>
+
+      <p><dfn id="outgoing-payment-grant">Outgoing payment grant request</dfn> is a <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">POST request</a> to the [=authentication server=] to connect the [=user wallet=] to the browser.</p>
+
+      <p><dfn id="redirect-uri">Redirect URI</dfn> is a URL the user is redirected to in order to accept or decline the <a href="#outgoing-payment-grant">outgoing payment grant request</a> when connecting a [=user wallet=] to the browser.</p>
+      <p>
+        To set up a wallet and enable web monetization, run these steps:
+        <ol>
+          <li>User loads `chrome://webmonetization/wallet` page and clicks on the "Add a Wallet" button in the page, which opens a dialog where the user must specify a [=user wallet address=] and the amount defining the spending limit from the browser.</li>
+
+          <li>Let |userWalletAddress| be the user wallet provided in the dialog.</li>
+
+          <li>Let |amount| be the amount provided in the dialog.</li>
+
+          <li id="get-wallet-address-response">Upon clicking the "Add" button in the dialog, the browser sends a <a href="#get-wallet-address">get wallet address request</a> to the |userWalletAddress|.</li>
+
+          <li>Let |authServer| be the [=authentication server=] from the <a href="#get-wallet-address-response">get wallet address response</a>.</li>
+
+          <li>Let |walletPageUri| be the "chrome://webmonetization/wallet".</li>
+
+          <li>Let |clientNonce| is randomly generated integer by the browser.
+
+          <li id="outgoing-payment-grant-response">The browser sends the <a href="#outgoing-payment-grant">outgoing payment grant request</a> to the given |authServer| with the `application/json` request body containing:
+            <pre class="highlight">
+            {
+                "access_token": {
+                    "access": [{
+                        "type": "outgoing-payment",
+                        "actions": ["create"],
+                        "identifier": |userWalletAddress|
+                    }],
+                    "limits": {
+                        "debitAmount": {
+                            "amount": |amount|
+                        }
+                    },
+                    "client": |userWalletAddress|,
+                    "interact": {
+                        "start": ["redirect"],
+                        "finish": {
+                            "uri": |walletPageUri|,
+                            "method": "redirect",
+                            "nonce": |clientNonce|
+                        }
+                    }
+                }
+            }
+            </pre>
+            <li>Let |redirectUri| be <a href="#redirect-uri">redirect URI</a> from the <a href="#outgoing-payment-grant-response">outgoing payment grant response</a>.</li>
+
+            <li>Let |interactNonce| be <a href="#redirect-uri">redirect URI</a> from the <a href="#outgoing-payment-grant-response">outgoing payment grant response</a>.</li>
+
+            <li>Load |redirectUri| in the current tab, which is expected to show a page where the user must click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. Then the page is expected to redirect the user to the |walletPageUri| with two query parameters: `interact_ref` and `hash` bringing up the <dfn>wallet page</dfn>.</li>
+
+            <li>Let |verifyInteractionHash| be an algorithm that performs the following steps given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash|:
+              <ol>
+                <li>Let |grantEndpoint| be a concatenation of the |authServer| origin and "/".</li>
+                <li>Let |data| be a string formed by concatenating |clientNonce|, |interactNonce|, |interactRef|, and |grantEndpoint|, each separated by a newline character ("\n").</li>
+                <li>Encode |data| using the {{TextEncoder/encode(input)}}.</li>
+                <li>Compute the SHA-256 digest of the encoded |data| using the {{SubtleCrypto/digest()}}.</li>
+                <li>Convert the resulting digest to a base64-encoded string, |calculatedHash|.</li>
+                <li>If |calculatedHash| does not match |hash|, throw an error indicating an invalid interaction hash.</li>
+              </ol>
+              <pre class="example">
+                async verifyInteractionHash({
+                  clientNonce,
+                  interactRef,
+                  interactNonce,
+                  hash,
+                  authServer
+                }: VerifyInteractionHashParams): Promise<void> {
+                  const grantEndpoint = new URL(authServer).origin + '/'
+                  const data = new TextEncoder().encode(
+                    `${clientNonce}\n${interactNonce}\n${interactRef}\n${grantEndpoint}`
+                  )
+
+                  const digest = await crypto.subtle.digest('SHA-256', data)
+                  const calculatedHash = btoa(
+                    String.fromCharCode.apply(null, new Uint8Array(digest))
+                  )
+                  return calculatedHash == hash
+                }
+              </pre>
+            </li>
+          </li>
+          <li>Let |interactRef| be the `interact_ref` query parameter of the [=wallet page=]</a>.</li>
+          <li>Let |hash| be the `hash` query parameter of the loaded [=wallet page=].</li>
+          <li>If the result of running the |verifyInteractionHash| algorithm given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash| is false, then report the failure to the user by showing a message on the [=wallet page=] and exit.</li>
+
+          <li>Show a message on the [=wallet page=] page indicating that the |userWallet| was successfully connected.</li>
+        </ol>
+      </p>
+    </section>
+    <section id="session-flow">
+      <h2>Session flow</h2>
+      <p>
+        Bla
+      </p>
+      <section id="session-flow-alg">
+        <h2>Session flow algoritihm</h2>
+        <p>
+          Bla
+        </p>
+      </section>
+      <section id="rate-computation-alg">
+        <h2>Rate computation algoritihm</h2>
+        <p>
+          Bla
+        </p>
+      </section>
+    </section>
+    <section id="questions">
+      <h2>Open questions</h2>
+      <p>
+        Bla
       </p>
     </section>
   </body>
