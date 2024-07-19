@@ -1,7 +1,7 @@
 
 # Web Monetization Session Flow
 
-This document defines a user wallet integraction and the flow of a web monetization session in a browser.
+Repository for the web monetization session flow specification. [View the specification](https://asurkov.github.io/wm-session-flow/).
 
 ## Remove everything from this line when you're done
 
