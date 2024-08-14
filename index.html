@@ -43,6 +43,14 @@
           repoURL: "asurkov/wm-session-flow",
           branch: "main",
         },
+        localBiblio: {
+          openpayments: {
+            title: "Open Payments",
+            href: "https://openpayments.dev/",
+            status: "",
+            publisher: "Interledger",
+          },
+        },
       };
     </script>
   </head>
@@ -56,14 +64,14 @@
     <section id="introduction">
       <h2>Introduction</h2>
       <p>
-        The specification defines the browser implementation for setting up a user wallet and managing the web monetization (WM) session flow. To start using web monetization in a browser, the user must add a wallet to enable web monetization payments while browsing the web. When a user visits and interacts with a web-monetized page, the WM session begins, facilitated through a series of OpenPayments API calls. This document details the procedures and protocols involved.
+        The specification defines the browser implementation for setting up a user wallet and managing the WM session flow. To start using web monetization in a browser, the user must add a wallet to enable web monetization payments while browsing the web. When a user visits and interacts with a web-monetized page, the WM session begins, facilitated through a series of [[[openpayments]]] (<abbr title="Open Payments">OP</abbr>)</a> calls. This document details the procedures and protocols involved.
       </p>
     </section>
     <section id="definitions">
       <h2>Definitions</h2>
       <dl>
         <dt><dfn>Wallet provider</dfn></dt>
-        <dd>A financial entity that supports web monetization by implementing the <a href="https://openpayments.dev/introduction/overview/">OpenPayments API</a>.</dd>
+        <dd>A financial entity that supports web monetization by implementing the [[[openpayments]]] API.</dd>
 
         <dt><dfn>Wallet</dfn></dt>
         <dd>An account within the [=wallet provider=]</a>.</dd>
@@ -78,10 +86,10 @@
         <dd>A [=wallet address=] of the [=user wallet=].</dd>
 
         <dt><dfn>Authentication server</dfn></dt>
-        <dd>A server of the [=wallet provider=] responsible for verifying the identity of users and authorizing access to resources.</dd>
+        <dd>An [[[openpayments]]] server of the [=wallet provider=] responsible for verifying the identity of users and authorizing access to resources.</dd>
 
         <dt><dfn>Resource server</dfn></dt>
-        <dd>A server that stores and manages resources for the [=wallet provider=].</dd>
+        <dd>An [[[openpayments]]] server that stores and manages resources for the [=wallet provider=].</dd>
 
         <dt><dfn>Asset code</dfn></dt>
         <dd>A string representing the type of currency the [=wallet=] uses.</dd>
@@ -92,29 +100,60 @@
     </section>
     <section id="wallet-setup">
       <h2>Wallet setup</h2>
-      <p><dfn id="get-wallet-address">Get wallet address request</dfn> is a <a href="#get-wallet-address">GET request</a> to the [=user wallet address=] to retrieve the wallet information such as [=authentication server=], [=resource server=], [=asset code=], and [=asset scale=].</p>
 
-      <p><dfn id="outgoing-payment-grant">Outgoing payment grant request</dfn> is a <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">POST request</a> to the [=authentication server=] to connect the [=user wallet=] to the browser.</p>
+      <p><dfn>Wallet page</dfn> refers to the browser's UI for managing [=user wallets=], accessible via a browser specific URI. In Chrome, this is located at `chrome://webmonetization/wallet`.</p>
 
-      <p><dfn id="redirect-uri">Redirect URI</dfn> is a URL the user is redirected to in order to accept or decline the <a href="#outgoing-payment-grant">outgoing payment grant request</a> when connecting a [=user wallet=] to the browser.</p>
+      <p><dfn>Get wallet address request</dfn> is an <a href="https://openpayments.dev/apis/wallet-address-server/operations/get-wallet-address/">OP request</a> to the [=user wallet address=] to retrieve the wallet information such as [=authentication server=], [=resource server=], [=asset code=], and [=asset scale=]. The response format is
+        <pre class="nohighlight">
+        {
+          assetCode: string, // see <a href="#dfn-asset-code">asset code</a>
+          assetScale: number, // see <a href="#dfn-asset-scale">asset scale</a>,
+          authServer: string, // see <a href="#dfn-authentication-server">authentication server</a>,
+          resourceServer: string // see <a href="#dfn-resource-server">resource server</a>
+        }
+        </pre>
+      </p>
+
+      <p><dfn>Redirect URI</dfn> is a URL the user is redirected to in order to accept or decline the [=outgoing payment grant request=] when connecting a [=user wallet=] to the browser.</p>
+
+      <p><dfn>Interact nonce</dfn> is a key used to verify the [=outgoing payment grant request=].</p>
+
+      <p><dfn>Outgoing payment grant request</dfn> is an <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">OP request</a> to the [=authentication server=] to connect the [=user wallet=] to the browser. The response format is
+        <pre class="nohighlight">
+        {
+          interact: {
+            redirect: string, // see <a href="#dfn-redirect-uri">redirect URI</a>
+            finish: string // // see <a href="#dfn-interact-nonce">interact nonce</a>
+          },
+          continue: { // required to continue interacting with the grant
+            access_token: {
+              value: string // access token
+            },
+            uri: string, // URI to send continuation requests
+            wait: number // number of seconds before making a continuation request
+          }
+        }
+        </pre>
+      </p>
+
       <p>
-        To set up a wallet and enable web monetization, run these steps:
+        To set up a [=user wallet=], run these steps:
         <ol>
-          <li>User loads `chrome://webmonetization/wallet` page and clicks on the "Add a Wallet" button in the page, which opens a dialog where the user must specify a [=user wallet address=] and the amount defining the spending limit from the browser.</li>
+          <li id="connect-user-wallet-step">User loads the [=wallet page=] and clicks on the `"Add a Wallet"` button in the page, which opens a dialog where the user must specify [=user wallet address=] and amount defining the spending limit.</li>
 
-          <li>Let |userWalletAddress| be the user wallet provided in the dialog.</li>
+          <li>Let |userWalletAddress| be the user wallet address provided in the dialog from the <a href="#connect-user-wallet-step">connect user wallet step</a>.</li>
 
-          <li>Let |amount| be the amount provided in the dialog.</li>
+          <li>Let |amount| be the amount provided in the dialog from the <a href="#connect-user-wallet-step">connect user wallet step</a>.</li>
 
-          <li id="get-wallet-address-response">Upon clicking the "Add" button in the dialog, the browser sends a <a href="#get-wallet-address">get wallet address request</a> to the |userWalletAddress|.</li>
+          <li id="get-wallet-address-step">Upon clicking the `"Add"` button in the dialog, the browser sends a [=get wallet address request=] to the |userWalletAddress|.</li>
 
-          <li>Let |authServer| be the [=authentication server=] from the <a href="#get-wallet-address-response">get wallet address response</a>.</li>
+          <li>Let |authServer| be the [=authentication server=] from the response of the <a href="#get-wallet-address-step">get wallet address step</a>.</li>
 
-          <li>Let |walletPageUri| be the "chrome://webmonetization/wallet".</li>
+          <li>Let |walletPageUri| be the URI of the [=wallet page=].</li>
 
-          <li>Let |clientNonce| is randomly generated integer by the browser.
+          <li>Let |clientNonce| is randomly generated integer.
 
-          <li id="outgoing-payment-grant-response">The browser sends the <a href="#outgoing-payment-grant">outgoing payment grant request</a> to the given |authServer| with the `application/json` request body containing:
+          <li id="outgoing-payment-grant-step">The [=outgoing payment grant request=] is sent to the given |authServer| with the `application/json` request body containing:
             <pre class="highlight">
             {
                 "access_token": {
@@ -140,11 +179,11 @@
                 }
             }
             </pre>
-            <li>Let |redirectUri| be <a href="#redirect-uri">redirect URI</a> from the <a href="#outgoing-payment-grant-response">outgoing payment grant response</a>.</li>
+            <li>Let |redirectUri| be [=redirect URI=] from the response of the <a href="#outgoing-payment-grant-step">outgoing payment grant step</a>.</li>
 
-            <li>Let |interactNonce| be <a href="#redirect-uri">redirect URI</a> from the <a href="#outgoing-payment-grant-response">outgoing payment grant response</a>.</li>
+            <li>Let |interactNonce| be [=interact nonce=] from the response of the <a href="#outgoing-payment-grant-step">outgoing payment grant step</a>.</li>
 
-            <li>Load |redirectUri| in the current tab, which is expected to show a page where the user must click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. Then the page is expected to redirect the user to the |walletPageUri| with two query parameters: `interact_ref` and `hash` bringing up the <dfn>wallet page</dfn>.</li>
+            <li id="wallet-authorization-step">Load the |redirectUri| in the current tab, which should display a page where the user is prompted to click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. After authorization, the page should redirect the user to the |walletPageUri| with two query parameters: `interact_ref` and `hash`.</li>
 
             <li>Let |verifyInteractionHash| be an algorithm that performs the following steps given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash|:
               <ol>
@@ -177,8 +216,8 @@
               </pre>
             </li>
           </li>
-          <li>Let |interactRef| be the `interact_ref` query parameter of the [=wallet page=]</a>.</li>
-          <li>Let |hash| be the `hash` query parameter of the loaded [=wallet page=].</li>
+          <li>Let |interactRef| be the `interact_ref` query parameter of the wallet page loaded during the <a href="#wallet-authorization-step">wallet authorization step</a>.</li>
+          <li>Let |hash| be the value of the `hash` query parameter in the wallet page loaded during the <a href="#wallet-authorization-step">wallet authorization step</a>.</li>
           <li>If the result of running the |verifyInteractionHash| algorithm given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash| is false, then report the failure to the user by showing a message on the [=wallet page=] and exit.</li>
 
           <li>Show a message on the [=wallet page=] page indicating that the |userWallet| was successfully connected.</li>
@@ -188,7 +227,9 @@
     <section id="session-flow">
       <h2>Session flow</h2>
       <p>
-        Bla
+        <p class="note">
+          WM should have protection againsts the page reloads: in the extension we are storing the overpaying sessions: url+walletAddress, monetizationEvent and when the last payment was sent. If the page is reloaded, we are only sending the previous monetization event and wait the appropriate time before making the next payment.
+        <p>
       </p>
       <section id="session-flow-alg">
         <h2>Session flow algoritihm</h2>
