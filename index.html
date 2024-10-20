@@ -71,7 +71,13 @@
     <section id="introduction">
       <h2>Introduction</h2>
       <p>
-        The specification defines the browser implementation for setting up a [=user wallet=] and managing the [=WM session=] flow. To start using web monetization in a browser, the user must add a wallet to enable web monetization payments while browsing the web. When a user visits and interacts with a web-monetized page, the WM session begins, facilitated through a series of [[[openpayments]]] (<abbr title="Open Payments">OP</abbr>)</a> calls. This document details the procedures and protocols involved.
+        The specification defines the browser implementation for setting up a
+        [=user wallet=] and managing the [=WM session=] flow. To start using web
+        monetization in a browser, the user must add a wallet to enable web
+        monetization payments while browsing the web. When a user visits a [=web-monetized website=],
+        the [=WM session=] begins, facilitated through a series of
+        [[[openpayments]]] (<abbr title="Open Payments">OP</abbr>) calls.
+        This document details the procedures and protocols involved.
       </p>
     </section>
     <section id="definitions">
@@ -79,6 +85,17 @@
 
       <h3>Terms</h3>
       <dl>
+        <dt><dfn>Web-monetized website</dfn></dt>
+        <dd>A website that contains one or more HTML [^link^] elements with
+          a <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">`rel="monetization"`</a> attribute.</dd>
+
+        <dt><dfn>Web-monetized media</dfn></dt>
+        <dd>HTML [^video^] or [^audio^] elements containing one or more HTML
+            [^link^] elements with a
+            <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">
+            `rel="monetization"`</a> attribute.
+        </dd>
+
         <dt><dfn>Wallet provider</dfn></dt>
         <dd>A financial entity that supports web monetization by implementing the [[[openpayments]]] API.</dd>
 
@@ -114,7 +131,7 @@
 
         <dt><dfn data-lt="session|WM session">Monetization session</dfn></dt>
         <dd>A period during which payments flow from a [=user wallet=] to a
-        [=website wallet=] as the user engages with content on a web-monetized page.</dd>
+        [=website wallet=] as the user engages with content on a [=web-monetized website=].</dd>
 
         <dt><dfn>Pay rate</dfn></dt>
         <dd>The amount of money transferred per hour from a [=user wallet=]
@@ -383,8 +400,8 @@
       <h2>Session flow</h2>
 
       <p>
-        As long as the user lands on a web-monetized website or interacts with
-        web-monetized media content, and their preferences allow monetization for
+        As long as the user lands on a [=web-monetized website=] or interacts with
+        [=web-monetized media=], and their preferences allow monetization for
         that site, the browser will attempt to initiate one or more
         [=monetization sessions=]. This section outlines the session flow, including
         when a session starts and stops, and how the browser facilitates payments
@@ -609,34 +626,58 @@
       <h3>Session initiation</h3>
 
       <p>
-        As soon as the user lands on a web-monetized website, such as loading a
-        webpage or switching to an existing tab with an already loaded website,
-        and the user preferences allow monetization for that site, the following
-        steps are applied:
+        As soon as a [=web-monetized website=] gains the user focus, such as when the user
+        loads a website, switches back to the browser, or switches to an existing
+        tab with an already loaded website, and if user preferences allow
+        monetization for that site, [=sessions are initiated for a document=] of the website.
+      </p>
+
+      <p>
+        To <dfn data-lt="sessions are initiated for a document">initiate document-wide
+        sessions</dfn> given {{Document}} as |document|, run these steps:
         <ul>
-          <li>Let |linkElements| be a {{NodeList}} of all HTML link elements with
-            the `rel="monetization"` attribute on the webpage.</li>
+          <li>If [=Document/permissions policy=] doesn't allow
+            <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
+            `monetization`</a>
+            for |document|, then return.
+          </li>
+          <li>Let |headElement| be the [^head^] element of the given |document|.</li>
+          <li>Then [=initiate sessions scoped to=] |headElement|.</li>
+          <li>If [=Document/permissions policy=] doesn't allow
+            <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
+            `monetization`</a> for subdocuments of |document|, then return.
+          </li>
+          <li>
+            For each subdocument, skip the subdocument if
+            [=Document/permissions policy=] doesn't allow
+            <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
+            `monetization`</a> for the origin of the subdocument. Otherwise,
+            [=initiate document-wide sessions=] given the subdocument.
+          </li>
+        </ul>
+      </p>
+
+      <p>
+        As soon as a the user starts interacting with a [=web-monetized media=] of a website,
+        and the user preferences allow monetization for that site, then [=sessions are initiated=]
+        scoped to the media HTML element.
+      </p>
+
+      <p>
+        To <dfn data-lt="sessions are initiated">initiate sessions scoped to</dfn>
+        the given {{HTMLElement}} as |root|, run these steps:
+        <ul>
+          <li>Let |linkElements| be a {{NodeList}} of all HTML [^link^] elements with
+            the `rel="monetization"` attribute from the children of the |root|.</li>
           <li>For each element from |linkElements|, [=initiate a session=].</li>
         </ul>
       </p>
 
-      <p class="note">
-        Subdocuments are not yet specified. They should be traversed for
-        monetization links according to the
-        <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
-          HTTP Permissions Policy</a>.
-      </p>
-
       <p>
-        As soon as the user lands starts interacting with web-monetized media content,
-        and the user preferences allow monetization for that site, then the following steps are applied:
-      </p>
-
-      <p>
-        To <dfn data-lt="session is initiated">initiate a session</dfn> for a monetization
-        {{HTMLLinkElement}}, run these steps:
+        To <dfn data-lt="session is initiated">initiate a session</dfn> for a `monetization`
+        [^link^] element, run these steps:
         <ol>
-          <li>Let |linkElement:HTMLLinkElement| be a given monetization link element.</li>
+          <li>Let |linkElement:HTMLLinkElement| be a given [^link^] element.</li>
           <li>Let |websiteWalletAddress| be the value of the `href` attribute of |linkElement|.</li>
           <li><dfn>Get website wallet address step</dfn>. Send
             [=get wallet address request=] to |websiteWalletAddress|.</li>
@@ -719,24 +760,13 @@
             to |paymentBucketURI|.</li>
         </ol>
       </p>
-
-
-      get a list of [=website wallet addresses=] on a web-monetized website
-
-
-      <section id="rate-computation-alg">
-        <h2>Rate computation algoritihm</h2>
-        <p>
-          Bla
-        </p>
-      </section>
     </section>
 
     <section id="questions">
       <h2>Open questions</h2>
-      <p>
-        Bla
-      </p>
+      <ul>
+        <li>Look for `FIXME` labels.</li>
+      </ul>
     </section>
   </body>
 </html>
