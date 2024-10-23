@@ -1,181 +1,176 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Web monetization session flow</title>
-    <script
-      defer
-      class="remove"
-      src="https://www.w3.org/Tools/respec/respec-w3c"
-    ></script>
-    <script class="remove">
-      // See: https://respec.org/docs/ for all configuration options
-      var respecConfig = {
-        shortName: "wm-session-flow",
-        specStatus: "base",
-        noRecTrack: true,
-        edDraftURI: "n/a",
-        editors: [
-          {
-            name: "Alexander Surkov",
-            mailto: "asurkov@igalia.com",
-            company: "Igalia",
-            companyURL: "https://igalia.com/",
-            w3cid: "51089",
-          },
-          {
-            name: "Radu Popa",
-            mailto: "radu@interledger.foundation",
-            company: "Interledger",
-            companyURL: "https://interledger.org/",
-          },
-        ],
-        authors: [
-          {
-            name: "Alexander Surkov",
-            mailto: "asurkov@igalia.com",
-            company: "Igalia",
-            companyURL: "https://igalia.com/",
-            w3cid: "51089",
-          },
-        ],
-        github: {
-          repoURL: "asurkov/wm-session-flow",
-          branch: "main",
-        },
-        localBiblio: {
-          openpayments: {
-            title: "Open Payments",
-            href: "https://openpayments.dev/",
-            status: "",
-            publisher: "Interledger",
-          },
-          GNAP: {
-            title: "GNAP",
-            href: "https://datatracker.ietf.org/doc/html/draft-ietf-gnap-core-protocol",
-            status: "",
-            publisher: "",
-          }
-        },
-        xref: [
-          "csp",
-          "dom",
-          "ecmascript",
-          "encoding",
-          "html",
-          "permissions-policy",
-          "webcryptoapi",
-          "webidl",
-        ],
-      };
-    </script>
-  </head>
-  <body>
-    <section id="abstract">
-      <p>This specification defines a user wallet integraction and the flow of a web monetization (<abbr title="Web Monetization">WM</abbr>) [=session=] in a browser.</p>
-    </section>
-    <section id="sotd">
-      <p>This is a work-in-progress draft and expected to be integrated with the <a href="https://webmonetization.org/specification/">web monetization specification</a>.</p>
-    </section>
-    <section id="introduction">
-      <h2>Introduction</h2>
-      <p>
-        The specification defines the browser implementation for setting up a
-        [=user wallet=] and managing the [=WM session=] flow. To start using web
-        monetization in a browser, the user must add a wallet to enable web
-        monetization payments while browsing the web. When a user visits a [=web-monetized website=],
-        the [=WM session=] begins, facilitated through a series of
-        [[[openpayments]]] (<abbr title="Open Payments">OP</abbr>) calls.
-        This document details the procedures and protocols involved.
-      </p>
-    </section>
-    <section id="definitions">
-      <h2>Definitions</h2>
 
-      <h3>Terms</h3>
-      <dl>
-        <dt><dfn>Web-monetized website</dfn></dt>
-        <dd>A website that contains one or more HTML [^link^] elements with
-          a <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">`rel="monetization"`</a> attribute.</dd>
+<head>
+  <meta charset="utf-8">
+  <title>Web monetization session flow</title>
+  <script defer class="remove" src="https://www.w3.org/Tools/respec/respec-w3c"></script>
+  <script class="remove">
+  // See: https://respec.org/docs/ for all configuration options
+  var respecConfig = {
+    shortName: "wm-session-flow",
+    specStatus: "base",
+    noRecTrack: true,
+    edDraftURI: "n/a",
+    editors: [{
+        name: "Alexander Surkov",
+        mailto: "asurkov@igalia.com",
+        company: "Igalia",
+        companyURL: "https://igalia.com/",
+        w3cid: "51089",
+      },
+      {
+        name: "Radu Popa",
+        mailto: "radu@interledger.foundation",
+        company: "Interledger",
+        companyURL: "https://interledger.org/",
+      },
+    ],
+    authors: [{
+      name: "Alexander Surkov",
+      mailto: "asurkov@igalia.com",
+      company: "Igalia",
+      companyURL: "https://igalia.com/",
+      w3cid: "51089",
+    }, ],
+    github: {
+      repoURL: "asurkov/wm-session-flow",
+      branch: "main",
+    },
+    localBiblio: {
+      openpayments: {
+        title: "Open Payments",
+        href: "https://openpayments.dev/",
+        status: "",
+        publisher: "Interledger",
+      },
+      GNAP: {
+        title: "GNAP",
+        href: "https://datatracker.ietf.org/doc/html/draft-ietf-gnap-core-protocol",
+        status: "",
+        publisher: "",
+      }
+    },
+    xref: [
+      "csp",
+      "dom",
+      "ecmascript",
+      "encoding",
+      "html",
+      "permissions-policy",
+      "webcryptoapi",
+      "webidl",
+    ],
+  };
+  </script>
+</head>
 
-        <dt><dfn>Web-monetized media</dfn></dt>
-        <dd>[=Media elements=] elements containing one or more
-            [^link^] elements with a
-            <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">
-            `rel="monetization"`</a> attribute.
-        </dd>
+<body>
+  <section id="abstract">
+    <p>This specification defines a user wallet integraction and the flow of a web monetization (<abbr title="Web Monetization">WM</abbr>) [=session=] in a browser.</p>
+  </section>
+  <section id="sotd">
+    <p>This is a work-in-progress draft and expected to be integrated with the <a href="https://webmonetization.org/specification/">web monetization specification</a>.</p>
+  </section>
+  <section id="introduction">
+    <h2>Introduction</h2>
+    <p>
+      The specification defines the browser implementation for setting up a
+      [=user wallet=] and managing the [=WM session=] flow. To start using web
+      monetization in a browser, the user must add a wallet to enable web
+      monetization payments while browsing the web. When a user visits a [=web-monetized website=],
+      the [=WM session=] begins, facilitated through a series of
+      [[[openpayments]]] (<abbr title="Open Payments">OP</abbr>) calls.
+      This document details the procedures and protocols involved.
+    </p>
+  </section>
+  <section id="definitions">
+    <h2>Definitions</h2>
 
-        <dt><dfn>Wallet provider</dfn></dt>
-        <dd>A financial entity that supports web monetization by implementing the [[[openpayments]]] API.</dd>
+    <h3>Terms</h3>
+    <dl>
+      <dt><dfn>Web-monetized website</dfn></dt>
+      <dd>A website that contains one or more HTML [^link^] elements with
+        a <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">`rel="monetization"`</a> attribute.</dd>
 
-        <dt><dfn>Wallet</dfn></dt>
-        <dd>An account within the [=wallet provider=]</a>.</dd>
+      <dt><dfn>Web-monetized media</dfn></dt>
+      <dd>[=Media elements=] elements containing one or more
+        [^link^] elements with a
+        <a href="https://webmonetization-preview.netlify.app/specification/#link-type-monetization">
+          `rel="monetization"`</a> attribute.
+      </dd>
 
-        <dt><dfn>Wallet address</dfn></dt>
-        <dd>A URL identifying the [=wallet=].</dd>
+      <dt><dfn>Wallet provider</dfn></dt>
+      <dd>A financial entity that supports web monetization by implementing the [[[openpayments]]] API.</dd>
 
-        <dt><dfn>User wallet</dfn></dt>
-        <dd>A [=wallet=] that the user connects to the browser.</dd>
+      <dt><dfn>Wallet</dfn></dt>
+      <dd>An account within the [=wallet provider=]</a>.</dd>
 
-        <dt><dfn>User wallet address</dfn></dt>
-        <dd>A [=wallet address=] of the [=user wallet=].</dd>
+      <dt><dfn>Wallet address</dfn></dt>
+      <dd>A URL identifying the [=wallet=].</dd>
 
-        <dt><dfn>User wallet provider</dfn></dt>
-        <dd>A [=wallet provider=] in which the [=user wallet=] is open.</dd>
+      <dt><dfn>User wallet</dfn></dt>
+      <dd>A [=wallet=] that the user connects to the browser.</dd>
 
-        <dt><dfn>Website wallet</dfn></dt>
-        <dd>A [=wallet=] used on a web-monetized website.</dd>
+      <dt><dfn>User wallet address</dfn></dt>
+      <dd>A [=wallet address=] of the [=user wallet=].</dd>
 
-        <dt><dfn>Website wallet address</dfn></dt>
-        <dd>A [=wallet address=] of the [=website wallet=].</dd>
+      <dt><dfn>User wallet provider</dfn></dt>
+      <dd>A [=wallet provider=] in which the [=user wallet=] is open.</dd>
 
-        <dt><dfn>Website wallet provider</dfn></dt>
-        <dd>A [=wallet provider=] in which the [=website wallet=] is open.</dd>
+      <dt><dfn>Website wallet</dfn></dt>
+      <dd>A [=wallet=] used on a web-monetized website.</dd>
 
-        <dt><dfn>Asset code</dfn></dt>
-        <dd>A string representing the type of currency the [=wallet=] uses.</dd>
+      <dt><dfn>Website wallet address</dfn></dt>
+      <dd>A [=wallet address=] of the [=website wallet=].</dd>
 
-        <dt><dfn>Asset scale</dfn></dt>
-        <dd>An integer that defines the scale (number of decimal places) for the currency in the [=wallet=]. It specifies the minimum amount that can be sent for a single transaction.</dd>
+      <dt><dfn>Website wallet provider</dfn></dt>
+      <dd>A [=wallet provider=] in which the [=website wallet=] is open.</dd>
 
-        <dt><dfn data-lt="session|WM session">Monetization session</dfn></dt>
-        <dd>A period during which payments flow from a [=user wallet=] to a
+      <dt><dfn>Asset code</dfn></dt>
+      <dd>A string representing the type of currency the [=wallet=] uses.</dd>
+
+      <dt><dfn>Asset scale</dfn></dt>
+      <dd>An integer that defines the scale (number of decimal places) for the currency in the [=wallet=]. It specifies the minimum amount that can be sent for a single transaction.</dd>
+
+      <dt><dfn data-lt="session|WM session">Monetization session</dfn></dt>
+      <dd>A period during which payments flow from a [=user wallet=] to a
         [=website wallet=] as the user engages with content on a [=web-monetized website=].</dd>
 
-        <dt><dfn>Pay rate</dfn></dt>
-        <dd>The amount of money transferred per hour from a [=user wallet=]
-          to a [=website wallet=] during a [=monetization session=].</dd>
+      <dt><dfn>Pay rate</dfn></dt>
+      <dd>The amount of money transferred per hour from a [=user wallet=]
+        to a [=website wallet=] during a [=monetization session=].</dd>
 
-        <dt><dfn>Spending limit</dfn></dt>
-        <dd>The maximum amount of money that can be spent from a [=user wallet=].</dd>
+      <dt><dfn>Spending limit</dfn></dt>
+      <dd>The maximum amount of money that can be spent from a [=user wallet=].</dd>
 
-        <dt><dfn>Authentication server</dfn></dt>
-        <dd>An [[[openpayments]]] server of the [=wallet provider=] responsible for verifying the identity of users and authorizing access to resources.</dd>
+      <dt><dfn>Authentication server</dfn></dt>
+      <dd>An [[[openpayments]]] server of the [=wallet provider=] responsible for verifying the identity of users and authorizing access to resources.</dd>
 
-        <dt><dfn>Continuation URI</dfn></dt>
-        <dd>An URL used to send a [=continuation grant request=] or [=cancel grant request=]. It points to the [=authentication server=] and includes the ID that identifies the grant request to be continued or revoked.</dd>
+      <dt><dfn>Continuation URI</dfn></dt>
+      <dd>An URL used to send a [=continuation grant request=] or [=cancel grant request=]. It points to the [=authentication server=] and includes the ID that identifies the grant request to be continued or revoked.</dd>
 
-        <dt><dfn>Continuation wait time</dfn></dt>
-        <dd>A number of seconds before sending a [=continuation grant request=] or [=cancel grant request=].</dd>
+      <dt><dfn>Continuation wait time</dfn></dt>
+      <dd>A number of seconds before sending a [=continuation grant request=] or [=cancel grant request=].</dd>
 
-        <dt><dfn>Resource server</dfn></dt>
-        <dd>An [[[openpayments]]] server that stores and manages resources for the [=wallet provider=].</dd>
+      <dt><dfn>Resource server</dfn></dt>
+      <dd>An [[[openpayments]]] server that stores and manages resources for the [=wallet provider=].</dd>
 
-        <dt><dfn>Access token</dfn></dt>
-        <dd>A token used as part of the [[[GNAP]]] protocol, included in the <a href="https://httpwg.org/specs/rfc9110.html#field.authorization">authentication headers</a> to make authorized calls of [[[openpayments]]] requests.</dd>
+      <dt><dfn>Access token</dfn></dt>
+      <dd>A token used as part of the [[[GNAP]]] protocol, included in the <a href="https://httpwg.org/specs/rfc9110.html#field.authorization">authentication headers</a> to make authorized calls of [[[openpayments]]] requests.</dd>
 
-        <dt><dfn>Payment bucket</dfn></dt>
-        <dd>An URI that identifies a temporary account within a [=wallet provider=]
-          used to collect funds before they are transferred to the designated
-          [=wallet=]. Typically, the bucket is created within the [=website wallet provider=]
-          upon the browser request to facilitate the transfer of user funds to the website
-          during the monetization session.</dd>
-      </dl>
+      <dt><dfn>Payment bucket</dfn></dt>
+      <dd>An URI that identifies a temporary account within a [=wallet provider=]
+        used to collect funds before they are transferred to the designated
+        [=wallet=]. Typically, the bucket is created within the [=website wallet provider=]
+        upon the browser request to facilitate the transfer of user funds to the website
+        during the monetization session.</dd>
+    </dl>
 
-      <h3>Open Payments requests</h3>
+    <h3>Open Payments requests</h3>
 
-      <p><dfn>Get wallet address request</dfn> is an <a href="https://openpayments.dev/apis/wallet-address-server/operations/get-wallet-address/">OP request</a> to a [=wallet address=] to retrieve the wallet information such as [=authentication server=], [=resource server=], [=asset code=], and [=asset scale=]. The response format is
-        <pre class="nohighlight">
+    <p><dfn>Get wallet address request</dfn> is an <a href="https://openpayments.dev/apis/wallet-address-server/operations/get-wallet-address/">OP request</a> to a [=wallet address=] to retrieve the wallet information such as [=authentication server=], [=resource server=], [=asset code=], and [=asset scale=]. The response format is
+      <pre class="nohighlight">
         {
           assetCode: string, // <a href="#dfn-asset-code">asset code</a>
           assetScale: number, // <a href="#dfn-asset-scale">asset scale</a>,
@@ -183,40 +178,40 @@
           resourceServer: string // <a href="#dfn-resource-server">resource server</a>
         }
         </pre>
-      </p>
+    </p>
 
-      <p><dfn>Cancel grant request</dfn> is an
-        <a href="https://openpayments.dev/apis/auth-server/operations/delete-continue/">
+    <p><dfn>Cancel grant request</dfn> is an
+      <a href="https://openpayments.dev/apis/auth-server/operations/delete-continue/">
         OP request</a> to the [=continuation URI=] to cancel an existing grant.
-        It requires an [=access token=] in the authentication header.
-      </p>
-    </section>
+      It requires an [=access token=] in the authentication header.
+    </p>
+  </section>
 
-    <section id="wallet-setup">
-      <h2>Wallet setup</h2>
-      This section specifies how the user can set up a [=user wallet=] and how to disconnect it.
+  <section id="wallet-setup">
+    <h2>Wallet setup</h2>
+    This section specifies how the user can set up a [=user wallet=] and how to disconnect it.
 
-      <h3>Terms</h3>
+    <h3>Terms</h3>
 
-      <p><dfn>Wallet page</dfn> refers to the browser's UI for managing [=user wallets=], accessible via a browser specific URI. In Chrome, this is located at `chrome://webmonetization/wallet`.</p>
+    <p><dfn>Wallet page</dfn> refers to the browser's UI for managing [=user wallets=], accessible via a browser specific URI. In Chrome, this is located at `chrome://webmonetization/wallet`.</p>
 
-      <p><dfn>Redirect URI</dfn> is an URL the user is redirected to in order to accept or decline the [=outgoing payment grant request=] when connecting a [=user wallet=] to the browser.</p>
+    <p><dfn>Redirect URI</dfn> is an URL the user is redirected to in order to accept or decline the [=outgoing payment grant request=] when connecting a [=user wallet=] to the browser.</p>
 
-      <p><dfn>Interact nonce</dfn> is a key used to verify the [=outgoing payment grant request=].</p>
+    <p><dfn>Interact nonce</dfn> is a key used to verify the [=outgoing payment grant request=].</p>
 
-      <p><dfn>Interact reference</dfn> is a key identifying the interactive [=outgoing payment grant request=].</p>
+    <p><dfn>Interact reference</dfn> is a key identifying the interactive [=outgoing payment grant request=].</p>
 
-      <h3>Open Payment requests</h3>
+    <h3>Open Payment requests</h3>
 
-      <p><dfn>Outgoing payment grant request</dfn> is an interactive <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">OP grant request</a> to the [=authentication server=] of the [=user wallet provider=] to connect the [=user wallet=] to the browser.
-        It requires
-        <ul>
-          <li>[=user wallet address=] given as |userWalletAddress|,</li>
-          <li>maximum amount allowed for transfer given as |amount|,</li>
-          <li>URL for redirecting the user given as |walletPageUri|.</li>
-        </ul>
-        The |clientNonce| is randomly generated integer. The request body is formatted as follows:
-        <pre class="nohighlight">
+    <p><dfn>Outgoing payment grant request</dfn> is an interactive <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">OP grant request</a> to the [=authentication server=] of the [=user wallet provider=] to connect the [=user wallet=] to the browser.
+      It requires
+      <ul>
+        <li>[=user wallet address=] given as |userWalletAddress|,</li>
+        <li>maximum amount allowed for transfer given as |amount|,</li>
+        <li>URL for redirecting the user given as |walletPageUri|.</li>
+      </ul>
+      The |clientNonce| is randomly generated integer. The request body is formatted as follows:
+      <pre class="nohighlight">
         {
             access_token: {
               access: [{
@@ -241,8 +236,8 @@
           }
         }
         </pre>
-        The response format is:
-        <pre class="nohighlight">
+      The response format is:
+      <pre class="nohighlight">
         {
           interact: {
             redirect: string, // <a href="#dfn-redirect-uri">redirect URI</a>
@@ -257,10 +252,10 @@
           }
         }
         </pre>
-      </p>
+    </p>
 
-      <p><dfn>Continuation grant request</dfn> is an <a href="https://openpayments.dev/apis/auth-server/operations/post-continue/">OP request</a> to the [=authentication server=] to continue using a grant. It takes an [=access token=] in the authentification header and an [=interact reference=] identifying the [=outgoing payment grant request=] in the request body. The response format is
-        <pre class="nohighlight">
+    <p><dfn>Continuation grant request</dfn> is an <a href="https://openpayments.dev/apis/auth-server/operations/post-continue/">OP request</a> to the [=authentication server=] to continue using a grant. It takes an [=access token=] in the authentification header and an [=interact reference=] identifying the [=outgoing payment grant request=] in the request body. The response format is
+      <pre class="nohighlight">
         {
           access_token: {
             value: // access token
@@ -274,16 +269,16 @@
           }
         }
         </pre>
-      </p>
+    </p>
 
-      <h3>User wallet details</h3>
+    <h3>User wallet details</h3>
 
-      <p>
-        A <dfn>user wallet details</dfn> is a {{UserWalletDetails}} object used to store
-        information about the connected [=user wallet=].
-      </p>
+    <p>
+      A <dfn>user wallet details</dfn> is a {{UserWalletDetails}} object used to store
+      information about the connected [=user wallet=].
+    </p>
 
-      <pre class="idl">
+    <pre class="idl">
         dictionary UserWalletDetails {
           USVString address; // the user wallet address
 
@@ -299,50 +294,50 @@
         };
       </pre>
 
-      <section>
-        <h3>Connect a wallet</h3>
+    <section>
+      <h3>Connect a wallet</h3>
 
-        <p>
-          The user can <dfn data-lt="initiation of the wallet setup">initiate a [=user wallet=] setup</dfn>
-          from the [=wallet page=], which provides a UI for
-          specifying the [=user wallet address=], the [=pay rate=], and the
-          [=spending limit=]. An example of such a UI could be an
-          `"Add a Wallet"` button that opens a dialog for entering this information,
-          with an `"Add"` button that starts the wallet connection process when clicked.
-        </p>
-        </p>
-          To connect a [=user wallet=], run these steps:
+      <p>
+        The user can <dfn data-lt="initiation of the wallet setup">initiate a [=user wallet=] setup</dfn>
+        from the [=wallet page=], which provides a UI for
+        specifying the [=user wallet address=], the [=pay rate=], and the
+        [=spending limit=]. An example of such a UI could be an
+        `"Add a Wallet"` button that opens a dialog for entering this information,
+        with an `"Add"` button that starts the wallet connection process when clicked.
+      </p>
+      </p>
+      To connect a [=user wallet=], run these steps:
+      <ol>
+        <li>Let |userWalletAddress| be the [=user wallet address=] provided by the user during the [=initiation of the wallet setup=].</li>
+
+        <li>Let |amount| be the amount provided by the user during the [=initiation of the wallet setup=].</li>
+
+        <li><dfn>Get user wallet address step</dfn>. Send a [=get wallet address request=] to the |userWalletAddress|.</li>
+
+        <li>Let |authServer| be the [=authentication server=] from the response of the [=get user wallet address step=].</li>
+
+        <li>Let |walletPageUri| be the URI of the [=wallet page=].</li>
+
+        <li>Let |clientNonce| is a randomly generated integer.
+
+        <li><dfn>Outgoing payment grant step</dfn>. Send an [=outgoing payment grant request=] to the |authServer| given the |userWalletAddress|, |amount|, |walletPageUri| and |clientNonce|.</li>
+
+        <li>Let |redirectUri| be [=redirect URI=] from the response of the [=outgoing payment grant step=].</li>
+
+        <li>Let |interactNonce| be [=interact nonce=] from the response of the [=outgoing payment grant step=].</li>
+
+        <li><dfn>User wallet authorization step</dfn>. Load the |redirectUri| in the current tab, which should display a page where the user is prompted to click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. After authorization, the page should redirect the user to the |walletPageUri| with two query parameters: the [=interact reference=] provided as the `interact_ref` parameter, and a string `hash`.</li>
+
+        <li>Let |verifyInteractionHash| be an algorithm that performs the following steps given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash|:
           <ol>
-            <li>Let |userWalletAddress| be the [=user wallet address=] provided by the user during the [=initiation of the wallet setup=].</li>
-
-            <li>Let |amount| be the amount provided by the user during the [=initiation of the wallet setup=].</li>
-
-            <li><dfn>Get user wallet address step</dfn>. Send a [=get wallet address request=] to the |userWalletAddress|.</li>
-
-            <li>Let |authServer| be the [=authentication server=] from the response of the [=get user wallet address step=].</li>
-
-            <li>Let |walletPageUri| be the URI of the [=wallet page=].</li>
-
-            <li>Let |clientNonce| is a randomly generated integer.
-
-            <li><dfn>Outgoing payment grant step</dfn>. Send an [=outgoing payment grant request=] to the |authServer| given the |userWalletAddress|, |amount|, |walletPageUri| and |clientNonce|.</li>
-
-            <li>Let |redirectUri| be [=redirect URI=] from the response of the [=outgoing payment grant step=].</li>
-
-              <li>Let |interactNonce| be [=interact nonce=] from the response of the [=outgoing payment grant step=].</li>
-
-              <li><dfn>User wallet authorization step</dfn>. Load the |redirectUri| in the current tab, which should display a page where the user is prompted to click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. After authorization, the page should redirect the user to the |walletPageUri| with two query parameters: the [=interact reference=] provided as the `interact_ref` parameter, and a string `hash`.</li>
-
-              <li>Let |verifyInteractionHash| be an algorithm that performs the following steps given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash|:
-                <ol>
-                  <li>Let |grantEndpoint| be a concatenation of the |authServer| origin and "/".</li>
-                  <li>Let |data| be a string formed by concatenating |clientNonce|, |interactNonce|, |interactRef|, and |grantEndpoint|, each separated by a newline character ("\n").</li>
-                  <li>Encode |data| using the {{TextEncoder/encode(input)}}.</li>
-                  <li>Compute the SHA-256 digest of the encoded |data| using the {{SubtleCrypto/digest()}}.</li>
-                  <li>Convert the resulting digest to a base64-encoded string, |calculatedHash|.</li>
-                  <li>If |calculatedHash| does not match |hash|, throw an error indicating an invalid interaction hash.</li>
-                </ol>
-                <pre class="example">
+            <li>Let |grantEndpoint| be a concatenation of the |authServer| origin and "/".</li>
+            <li>Let |data| be a string formed by concatenating |clientNonce|, |interactNonce|, |interactRef|, and |grantEndpoint|, each separated by a newline character ("\n").</li>
+            <li>Encode |data| using the {{TextEncoder/encode(input)}}.</li>
+            <li>Compute the SHA-256 digest of the encoded |data| using the {{SubtleCrypto/digest()}}.</li>
+            <li>Convert the resulting digest to a base64-encoded string, |calculatedHash|.</li>
+            <li>If |calculatedHash| does not match |hash|, throw an error indicating an invalid interaction hash.</li>
+          </ol>
+          <pre class="example">
                   async verifyInteractionHash({
                     clientNonce,
                     interactRef,
@@ -362,116 +357,116 @@
                     return calculatedHash == hash
                   }
                 </pre>
-              </li>
-            </li>
-            <li>Let |interactRef| be [=interact reference=] defined by the `interact_ref` query parameter of the wallet page loaded during the [=user wallet authorization step=].</li>
-            <li>Let |hash| be the value of the `hash` query parameter in the wallet page loaded during the [=user wallet authorization step=].</li>
-            <li>If the result of running the |verifyInteractionHash| algorithm given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash| is false, then report the failure to the user by showing a message on the [=wallet page=] and exit.</li>
+        </li>
+        </li>
+        <li>Let |interactRef| be [=interact reference=] defined by the `interact_ref` query parameter of the wallet page loaded during the [=user wallet authorization step=].</li>
+        <li>Let |hash| be the value of the `hash` query parameter in the wallet page loaded during the [=user wallet authorization step=].</li>
+        <li>If the result of running the |verifyInteractionHash| algorithm given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash| is false, then report the failure to the user by showing a message on the [=wallet page=] and exit.</li>
 
-            <li>Let |accessToken| be the [=access token=] from the response of the [=outgoing payment grant step=].</li>
-            <li>
-              Send the [=continuation grant request=] with the |accessToken| in the authentification header and |interactRef| in the request body as `interact_ref` field.
-            </li>
+        <li>Let |accessToken| be the [=access token=] from the response of the [=outgoing payment grant step=].</li>
+        <li>
+          Send the [=continuation grant request=] with the |accessToken| in the authentification header and |interactRef| in the request body as `interact_ref` field.
+        </li>
 
-            <li>Let |payRate| be the [=pay rate=] from the [=initiation of the wallet setup=].</li>
-            <li>Let |spendingLimit| be the [=spending limit=] from the [=initiation of the wallet setup=].</li>
+        <li>Let |payRate| be the [=pay rate=] from the [=initiation of the wallet setup=].</li>
+        <li>Let |spendingLimit| be the [=spending limit=] from the [=initiation of the wallet setup=].</li>
 
-            <li>Let |assetCode| be the [=asset code=] from the response of the [=get user wallet address step=].</li>
-            <li>Let |assetScale| be the [=asset scale=] from the response of the [=get user wallet address step=].</li>
-            <li>Let |continuationURI| be the [=continuation URI=] from the response of the [=outgoing payment grant step=].</li>
+        <li>Let |assetCode| be the [=asset code=] from the response of the [=get user wallet address step=].</li>
+        <li>Let |assetScale| be the [=asset scale=] from the response of the [=get user wallet address step=].</li>
+        <li>Let |continuationURI| be the [=continuation URI=] from the response of the [=outgoing payment grant step=].</li>
 
-            <li>Set the [=user wallet details=] to a {{UserWalletDetails}} object initalized with
-              `address` set to |userWalletAddress|, `assetCode` set to |assetCode|,
-              `assetScale` set to |assetScale|, `payRate` set to |payRate|, `spendingLimit` set to |spendingLimit|,
-              `accessToken` set to |accessToken| and `continuationURI` set to |continuationURI|.</li>
+        <li>Set the [=user wallet details=] to a {{UserWalletDetails}} object initalized with
+          `address` set to |userWalletAddress|, `assetCode` set to |assetCode|,
+          `assetScale` set to |assetScale|, `payRate` set to |payRate|, `spendingLimit` set to |spendingLimit|,
+          `accessToken` set to |accessToken| and `continuationURI` set to |continuationURI|.</li>
 
-            <li>Show a message on the [=wallet page=] indicating that the [=user wallet=] was successfully connected.</li>
-          </ol>
-        </p>
-      </section>
-
-      <section>
-        <h3>Disconnect a wallet</h3>
-        The user can disconnect their previously set-up [=user wallet=] through the [=wallet page=], which provides a UI for this. For instance, a `"Disconnect the Wallet"` button could be provided, initiating the disconnection process after the user gives explicit confirmation.
-        <p>
-          To disconnect a previously connected [=user wallet=], run these steps:
-          <ol>
-            <li>Let |accessToken| be the `accessToken` of the [=user wallet details=].</li>
-            <li>Let |continuationURI| be the `continuationURI` of the [=user wallet details=].</li>
-            <li>Revoke the [=outgoing payment grant request=] sent during the
-              [=outgoing payment grant step=] by sending a [=cancel grant request=] to
-              |continuationURI| with the given |accessToken|.</li>
-            <li>Set the [=user wallet details=] to an empty {{UserWalletDetails}} object.</li>
-          </ol>
-        </p>
-      </section>
+        <li>Show a message on the [=wallet page=] indicating that the [=user wallet=] was successfully connected.</li>
+      </ol>
+      </p>
     </section>
 
     <section>
-      <h2>Monetization status</h2>
-
+      <h3>Disconnect a wallet</h3>
+      The user can disconnect their previously set-up [=user wallet=] through the [=wallet page=], which provides a UI for this. For instance, a `"Disconnect the Wallet"` button could be provided, initiating the disconnection process after the user gives explicit confirmation.
       <p>
-        The user can disable web monetization completely or disable it per-[=origin=]
-        basis through the [=wallet page=]. The page provides a user interface that allows
-        them to adjust their preferences accordingly.
+        To disconnect a previously connected [=user wallet=], run these steps:
+        <ol>
+          <li>Let |accessToken| be the `accessToken` of the [=user wallet details=].</li>
+          <li>Let |continuationURI| be the `continuationURI` of the [=user wallet details=].</li>
+          <li>Revoke the [=outgoing payment grant request=] sent during the
+            [=outgoing payment grant step=] by sending a [=cancel grant request=] to
+            |continuationURI| with the given |accessToken|.</li>
+          <li>Set the [=user wallet details=] to an empty {{UserWalletDetails}} object.</li>
+        </ol>
       </p>
+    </section>
+  </section>
 
-      <p>
-        A website can disable web monetization for itself and/or its subdocuments by setting
-        the <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
+  <section>
+    <h2>Monetization status</h2>
+
+    <p>
+      The user can disable web monetization completely or disable it per-[=origin=]
+      basis through the [=wallet page=]. The page provides a user interface that allows
+      them to adjust their preferences accordingly.
+    </p>
+
+    <p>
+      A website can disable web monetization for itself and/or its subdocuments by setting
+      the <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
         `monetization`</a> [=policy-controlled feature=].
-      </p>
+    </p>
 
-      <p>
-        A website can also restrict web monetization to [=website wallet addresses=] of certain
-        [=origins=] by using the
-        <a href="https://webmonetization.org/docs/references/csp-monetization-src/">
-          `monetization-src`
-        </a> directive in the [=content security policy=].
-      </p>
+    <p>
+      A website can also restrict web monetization to [=website wallet addresses=] of certain
+      [=origins=] by using the
+      <a href="https://webmonetization.org/docs/references/csp-monetization-src/">
+        `monetization-src`
+      </a> directive in the [=content security policy=].
+    </p>
 
-      <p>
-        <dfn>Monetization is disabled</dfn> given a {{Document}} |document| if either of the following conditions apply:
-        <ul>
-          <li>The user preferences specify that web monetization is either completely
-              disabled or disabled specifically for the [=Document/origin=] of the |document|.</li>
-          <li>The |document| is not [=allowed to use=] the
-              <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
-              `monetization`</a> feature.</li>
-        </ul>
-      </p>
+    <p>
+      <dfn>Monetization is disabled</dfn> given a {{Document}} |document| if either of the following conditions apply:
+      <ul>
+        <li>The user preferences specify that web monetization is either completely
+          disabled or disabled specifically for the [=Document/origin=] of the |document|.</li>
+        <li>The |document| is not [=allowed to use=] the
+          <a href="https://webmonetization.org/docs/references/permissions-policy-monetization/">
+            `monetization`</a> feature.</li>
+      </ul>
+    </p>
 
-      <p>
-        <dfn>Monetization is disabled for a wallet</dfn> given a {{Document}} |document|
-        and a [=website wallet address=] |walletAddress| if the
-        <a href="https://webmonetization.org/docs/references/csp-monetization-src/">
-          `monetization-src`
-        </a> directive in the [=content security policy=] of the |document| restricts
-        the |walletAddress|'s [=origin=].
-      </p>
-    </section>
+    <p>
+      <dfn>Monetization is disabled for a wallet</dfn> given a {{Document}} |document|
+      and a [=website wallet address=] |walletAddress| if the
+      <a href="https://webmonetization.org/docs/references/csp-monetization-src/">
+        `monetization-src`
+      </a> directive in the [=content security policy=] of the |document| restricts
+      the |walletAddress|'s [=origin=].
+    </p>
+  </section>
 
-    <section>
-      <h2>Session flow</h2>
+  <section>
+    <h2>Session flow</h2>
 
-      <p>
-        As long as the user lands on a [=web-monetized website=] or interacts with
-        [=web-monetized media=], and their preferences allow monetization for
-        that site, the browser will attempt to initiate one or more
-        [=monetization sessions=]. This section outlines the session flow, including
-        when a session starts and stops, and how the browser facilitates payments
-        from the user’s wallet to the website.
-      </p>
+    <p>
+      As long as the user lands on a [=web-monetized website=] or interacts with
+      [=web-monetized media=], and their preferences allow monetization for
+      that site, the browser will attempt to initiate one or more
+      [=monetization sessions=]. This section outlines the session flow, including
+      when a session starts and stops, and how the browser facilitates payments
+      from the user’s wallet to the website.
+    </p>
 
-      <h3>Open Payments requests</h3>
+    <h3>Open Payments requests</h3>
 
-      <p><dfn>Incoming payment grant request</dfn> is a non-interactive
-        <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">OP grant request</a> to
-        the [=authentication server=] of the [=website wallet provider=] to establish
-        a payment flow from the [=user wallet=] to the [=website wallet=]. It requires
-        a [=website wallet address=] given as |websiteWalletAddress| and an |amount|.
-        The request body is formatted as follows:
-        <pre class="nohighlight">
+    <p><dfn>Incoming payment grant request</dfn> is a non-interactive
+      <a href="https://openpayments.dev/apis/auth-server/operations/post-request/">OP grant request</a> to
+      the [=authentication server=] of the [=website wallet provider=] to establish
+      a payment flow from the [=user wallet=] to the [=website wallet=]. It requires
+      a [=website wallet address=] given as |websiteWalletAddress| and an |amount|.
+      The request body is formatted as follows:
+      <pre class="nohighlight">
         {
           "access_token": {
             "access": [{
@@ -489,8 +484,8 @@
             }
         }
       </pre>
-       and in response the server returns:
-        <pre class="nohighlight">
+      and in response the server returns:
+      <pre class="nohighlight">
         {
           continue: {
             access_token: {
@@ -501,64 +496,65 @@
           }
         }
         </pre>
-      </p>
+    </p>
 
-      <p><dfn>Incoming payment request</dfn> is an
-        <a href="https://openpayments.dev/apis/resource-server/operations/create-incoming-payment">OP request</a>
-        to the [=resource server=] of the [=website wallet provider=] for creating a [=payment bucket=] that
-        accepts funds during the monetization session from the user.
-        It requires
-        <ul>
-          <li>[=access token=] provided by the [=incoming payment grant request=],
-            to be used in the authentication header;</li>
-           <li>[=website wallet address=] given  as |websiteWalletAddress|.</li>
-        </ul>
-        The |expiresAt| is an ISO string set to the
-        current date plus 10 minutes.
-        <div class="note">
-         The |expiresAt| field is set to the current date plus 10 minutes, as users
-         typically spend an average of 5 minutes on a website, making it unnecessary
-         to keep the session active longer. Ideally, the browser should terminate
-         the session when the user navigates away from the site. However, if that
-         doesn’t happen for any reason, the expiration date will ensure the session
-         is ended. If the session expires before the user leaves the website, the
-         browser should reinitialize the session.
-        </div>
-        <div class="note">
-          FIXME: The use of 10 minutes long |expiresAt| unnecessarily complicates things. The browser
-          should handle shutting down the session when it is no longer active.
-        </div>
-        The request body is formatted as follows:</p>
-        <pre class="nohighlight">
+    <p><dfn>Incoming payment request</dfn> is an
+      <a href="https://openpayments.dev/apis/resource-server/operations/create-incoming-payment">OP request</a>
+      to the [=resource server=] of the [=website wallet provider=] for creating a [=payment bucket=] that
+      accepts funds during the monetization session from the user.
+      It requires
+      <ul>
+        <li>[=access token=] provided by the [=incoming payment grant request=],
+          to be used in the authentication header;</li>
+        <li>[=website wallet address=] given as |websiteWalletAddress|.</li>
+      </ul>
+      The |expiresAt| is an ISO string set to the
+      current date plus 10 minutes.
+      <div class="note">
+        The |expiresAt| field is set to the current date plus 10 minutes, as users
+        typically spend an average of 5 minutes on a website, making it unnecessary
+        to keep the session active longer. Ideally, the browser should terminate
+        the session when the user navigates away from the site. However, if that
+        doesn’t happen for any reason, the expiration date will ensure the session
+        is ended. If the session expires before the user leaves the website, the
+        browser should reinitialize the session.
+      </div>
+      <div class="note">
+        FIXME: The use of 10 minutes long |expiresAt| unnecessarily complicates things. The browser
+        should handle shutting down the session when it is no longer active.
+      </div>
+      The request body is formatted as follows:
+    </p>
+    <pre class="nohighlight">
         {
           walletAddress: |websiteWalletAddress|,
           expiresAt: |expiresAt|
         }
         </pre>
-        and in response the server returns:
-        <pre class="nohighlight">
+    and in response the server returns:
+    <pre class="nohighlight">
         {
           id: URL // <a href="#dfn-payment-bucket">payment bucket</a>
         }
         </pre>
-      </p>
+    </p>
 
-      <p>
-        <dfn>Outgoing payment request</dfn> is an
-        <a href="https://openpayments.dev/apis/resource-server/operations/create-outgoing-payment">OP request</a>
-        to the [=resource server=] of the [=user wallet provider=] to transfer funds into
-        the [=payment bucket=] of the [=website wallet=]. It requires
-        <ul>
-          <li>[=access token=] from the [=continuation grant request=] when the user connected their
+    <p>
+      <dfn>Outgoing payment request</dfn> is an
+      <a href="https://openpayments.dev/apis/resource-server/operations/create-outgoing-payment">OP request</a>
+      to the [=resource server=] of the [=user wallet provider=] to transfer funds into
+      the [=payment bucket=] of the [=website wallet=]. It requires
+      <ul>
+        <li>[=access token=] from the [=continuation grant request=] when the user connected their
           [=user wallet=] to the browser, included in the authentification header,</li>
-          <li>[=user wallet address=] given as |userWalletAddress|,</li>
-          <li>[=payment bucket=] given as |paymentBucketURI|,</li>
-          <li>amount to transfer given as |amount|,</li>
-          <li>[=asset code=] given as |assetCode|,</li>
-          <li>[=asset scale=] given as |assetScale|.</li>
-        </ul>
-        The request body is formatted as follows:
-        <pre class="nohighlight">
+        <li>[=user wallet address=] given as |userWalletAddress|,</li>
+        <li>[=payment bucket=] given as |paymentBucketURI|,</li>
+        <li>amount to transfer given as |amount|,</li>
+        <li>[=asset code=] given as |assetCode|,</li>
+        <li>[=asset scale=] given as |assetScale|.</li>
+      </ul>
+      The request body is formatted as follows:
+      <pre class="nohighlight">
         {
           walletAddress: |userWalletAddress|,
           incomingPayment: |paymentBucketURI|,
@@ -569,8 +565,8 @@
           }
         }
         </pre>
-       and in response the server returns:
-        <pre class="nohighlight">
+      and in response the server returns:
+      <pre class="nohighlight">
         {
           receiveAmount: {
             value: integer, // amount sent
@@ -579,17 +575,17 @@
           }
         }
         </pre>
-      </p>
+    </p>
 
-      <h3>Session lifecycle</h3>
+    <h3>Session lifecycle</h3>
 
-      <p>
-        A <dfn data-lt="active session list">active sessions</dfn> is used to store
-        information about active monetization sessions. The storage is implemented
-        as a linked list of {{MonetizationSession}} objects.
-      </p>
+    <p>
+      A <dfn data-lt="active session list">active sessions</dfn> is used to store
+      information about active monetization sessions. The storage is implemented
+      as a linked list of {{MonetizationSession}} objects.
+    </p>
 
-      <pre class="idl">
+    <pre class="idl">
         dictionary MonetizationSession {
           HTMLLinkElement linkElement; // monetization HTML link
           USVString walletAddress; // wallet address
@@ -599,295 +595,296 @@
         };
       </pre>
 
-      <p>
-        As soon as a [=web-monetized website=]'s document becomes [=Document/fully active=],
-        [=document-wide sessions are initiated=] for a {{Document}} of the website.
-      </p>
+    <p>
+      As soon as a [=web-monetized website=]'s document becomes [=Document/fully active=],
+      [=document-wide sessions are initiated=] for a {{Document}} of the website.
+    </p>
 
-      <p>
-        If a {{Document}} becomes not [=Document/fully active=] then
-        [=suspend session=] for it and all its [=child navigables=].
-      </p>
+    <p>
+      If a {{Document}} becomes not [=Document/fully active=] then
+      [=suspend session=] for it and all its [=child navigables=].
+    </p>
 
-      <p>
-        If any of the conditions outlined in the
-        <a href="https://webmonetization.org/specification/#link-type-monetization">
-          link fetch and processing timing
-        </a> are met for a
-        <a href="https://webmonetization.org/specification/#link-type-monetization">
-          monetization
-        </a> [^link^] element, then the associated [=session is suspended=], and
-        a new [=session is initiated=] for the given link element.
-      </p>
+    <p>
+      If any of the conditions outlined in the
+      <a href="https://webmonetization.org/specification/#link-type-monetization">
+        link fetch and processing timing
+      </a> are met for a
+      <a href="https://webmonetization.org/specification/#link-type-monetization">
+        monetization
+      </a> [^link^] element, then the associated [=session is suspended=], and
+      a new [=session is initiated=] for the given link element.
+    </p>
 
-      <p>
-        As soon as the user starts interacting with a [=web-monetized media=] on a
-        website, [=sessions are initiated=] scoped to the [=media element=].
-      </p>
+    <p>
+      As soon as the user starts interacting with a [=web-monetized media=] on a
+      website, [=sessions are initiated=] scoped to the [=media element=].
+    </p>
 
-      <p>
-        As soon as the user stops interacting with a [=web-monetized media=] on a
-        website, any [=media element=] associated [=session is suspended=].
-      </p>
+    <p>
+      As soon as the user stops interacting with a [=web-monetized media=] on a
+      website, any [=media element=] associated [=session is suspended=].
+    </p>
 
-      <p class="note">
-        Monetization typically starts when the user loads a website, switches back to
-        the browser, or switches to an existing tab with an already loaded website.
-        For media elements, monetization begins as soon as the user interacts with
-        them, such as watching a video or listening to audio, and stops when the user
-        ceases the interaction.
-      </p>
+    <p class="note">
+      Monetization typically starts when the user loads a website, switches back to
+      the browser, or switches to an existing tab with an already loaded website.
+      For media elements, monetization begins as soon as the user interacts with
+      them, such as watching a video or listening to audio, and stops when the user
+      ceases the interaction.
+    </p>
 
-      <h3>Session initiation</h3>
+    <h3>Session initiation</h3>
 
-      <p>
-        To <dfn data-lt="document-wide sessions are initiated">initiate document-wide
+    <p>
+      To <dfn data-lt="document-wide sessions are initiated">initiate document-wide
         sessions</dfn> for a given {{Document}} |document|, perform the following steps:
-        <ol>
-          <li>[=Initiate sessions scoped to=] the [^head^] element of the |document|.</li>
-          <li>For each [=child navigable=] of the |document|, recursively
-              [=initiate document-wide sessions=].</li>
-        </ol>
-      </p>
+      <ol>
+        <li>[=Initiate sessions scoped to=] the [^head^] element of the |document|.</li>
+        <li>For each [=child navigable=] of the |document|, recursively
+          [=initiate document-wide sessions=].</li>
+      </ol>
+    </p>
 
-      <p>
-        To <dfn data-lt="sessions are initiated">initiate sessions scoped to</dfn>
-        the given {{HTMLElement}} as |root|, run these steps:
-        <ul>
-          <li>Let |linkElements| be a {{NodeList}} of all HTML [^link^] elements with
-            the `rel="monetization"` attribute from the children of the |root|.</li>
-          <li>For each element from |linkElements|, [=initiate a session=].</li>
-        </ul>
-      </p>
-
-      <p>
-        To <dfn data-lt="session is initiated">initiate a session</dfn> for a `monetization`
-        [^link^] element, run these steps:
-        <ol>
-          <li>Let |linkElement:HTMLLinkElement| be the given [^link^] element.</li>
-          <li>Let |document:Document| be the {{Node/ownerDocument}} of the |linkElement|.</li>
-          <li>If [=monetization is disabled=] given the |document|, then return.</li>
-
-          <li>Let |websiteWalletAddress| be the value of the `href` attribute of |linkElement|.</li>
-          <li>If [=monetization is disabled for a wallet=] given the |document| and |websiteWalletAddress|, then return.</li>
-
-          <li><dfn>Get website wallet address step</dfn>. Send
-            [=get wallet address request=] to |websiteWalletAddress|.</li>
-          <li>If the [=get website wallet address step=] request fails, fire an `error`
-            event on |linkElement| and return.</li>
-
-          <li>Fire `load` event on |linkElement|.</li>
-
-          <li>Let |authServer| be the [=authentication server=] from the
-            [=get website wallet address step=] response.</li>
-          <li><dfn>Incoming payment grant step</dfn>. Send an
-            [=incoming payment grant request=] to |authServer|, with |websiteWalletAddress|
-            and |amount| (FIXME).</li>
-          <li>If the [=incoming payment grant step=] request fails, return.</li>
-
-          <li>Let |resourceServer| be the [=resource server=] from the
-            [=get website wallet address step=] response.</li>
-          <li>Let |accessToken| be the [=access token=] from the [=incoming payment grant step=].</li>
-          <li><dfn>Incoming payment step</dfn>. Send an [=incoming payment request=] to
-            |resourceServer|, with |accessToken| and |websiteWalletAddress|.</li>
-          <li>If the [=incoming payment step=] request fails, return.</li>
-
-          <li>Let |continuationURI| be the [=continuation URI=] from the
-            [=incoming payment grant step=] response.</li>
-          <li>Revoke the grant obtained at the [=incoming payment grant step=] by sending a
-            [=cancel grant request=] to |continuationURI| using |accessToken|.</li>
-
-          <li>Let |assetCode| be the [=asset code=] from the
-            [=get website wallet address step=] response.</li>
-          <li>Let |assetScale| be the [=asset scale=] from the
-            [=get website wallet address step=] response.</li>
-          <li>Let |paymentBucketURI| be the [=payment bucket=] from the
-            [=incoming payment step=] response.</li>
-
-          <li>Let |session:MonetizationSession| be a new {{MonetizationSession}} object
-            with `linkElement` set to |linkElement|,
-            `walletAddress` set to |websiteWalletAddress|, `assetCode` set to |assetCode|,
-            `assetScale` set to |assetScale|, and `paymentBucketURI` set to |paymentBucketURI|.
-          </li>
-
-          <li>Append the |session| to the [=active session list=].
-
-          <li>
-            If the [=active session list=] length is 1, [=start session loop=].
-          </li>
-        </ol>
-      </p>
-
-      <h3>Payment distribution</h3>
-
-      <div class="note">
-        <p>
-          The payment algorithm distributes payments equally between
-          [=website wallets=] of the [=active sessions=], with payments made at equal time
-          intervals, defaulting to `1s` if a website wallet can accept the given amount.
-          If the website wallet's cannot accommodate the default amount, the payment
-          is delayed by a number of seconds to accommodate the increased amount as
-          defined by the [=asset scale=] of the [=website wallet=].
-        </p>
-        <p>
-          As soon as the first session is added to the [=active sessions=], each session
-          from the [=active sessions=] is processed one by one, with payments sent accordingly,
-          and the processing continues until the [=active sessions=] list is empty.
-        </p>
-      </div>
-
-      <div class="note">
-        <p>
-          Website wallets with an asset code different from the user wallet's asset
-          code are <b>ignored</b> until the exchange rate issue is resolved.
-        </p>
-        <p>
-          The current design suggests that the browser must rely on third-party currency
-          conversion services to estimate the payment amount for the website wallet.
-          However, handling the conversion rate seems like a natural part of OpenPayments,
-          as it removes the need for the browser to estimate exchange rates, leaving this
-          task to the wallet provider that performs the actual currency conversion.
-          This approach also eliminates the browser's dependency on third-party services,
-          resulting in a simpler design.
-        </p>
-      </div>
-
-      <p>
-        A <dfn>session loop</dfn> is an asynchronous process that iterates through
-        the [=active sessions=], during which the browser [=sends payments=]
-        to the [=website wallet=] associated with each session from the [=active sessions=].
-      </p>
-
-      <p>
-        A <dfn>currently processed session</dfn> is a {{MonetizationSession}} object from the
-        [=active sessions=] that the browser is processing within the [=session loop=].
-      </p>
-
-      <p>
-        A <dfn>session loop timeout</dfn> is the delay before the browser
-        [=sends payment=] to the [=website wallet=] of the [=currently processed session=]
-        and then proceeds to the next session from the [=active session list=].
-      </p>
-
-      <p>
-        A <dfn>payment amount</dfn> is the payment made to a [=website wallet=] of
-        the [=currently processed session=].
-      </p>
-
-      <p>
-        To compute [=payment amount=] and [=session loop timeout=]</dfn>
-        for the [=currently processed session=] given as |session|, run these steps:
-        <ul>
-          <li>Let |defaultTimeout| be `1`.</li>
-          <li>Let |userWalletDetails| be the [=user wallet details=].</li>
-          <li>Let |defaultAmount| be `userWalletDetails.payRate / 3600`.</li>
-          <li>Let |assetScale| be `session.assetScale`.</li>
-          <li>Let |minimalAmount| be `1 / Math.pow(10, |assetScale|)` using {{Math/pow()}}.</li>
-
-          <li>Then <dfn data-lt="computed payment amount">payment amount is computed</dfn> as:<br>
-            <code>max(|defaultAmount|, minimalAmount)</code> using {{Math/max()}}.
-          </li>
-
-          <li>Then <dfn data-lt="computed session loop timeout">session loop timeout is computed</dfn> as:<br>
-            <code>max(|defaultTimeout|, ceil(|minimalAmount| / |defaultAmount|))</code>
-            using {{Math/ceil(x)}}, {{Math/max()}}.
-          </li>
-        </ul>
-      </p>
-
-      <h3>Session loop</h3>
-
-      <p>
-        To <dfn>start session loop</dfn>, [=schedule next session processing=] given null.
-      </p>
-
-      <p>A <dfn>session processing runnable</dfn> is a function called
-        in [=session loop timeout=] which [=processes current session=].</p>
-
-      <p>
-        To <dfn>schedule next session processing</dfn> given an optional |session|, run these steps:
-        <ol>
-          <li>[=Set next session=] given the |session|.</li>
-          <li>Let |timeout| be the [=computed session loop timeout=].</li>
-          <li>Create a [=session processing runnable=]
-          and schedule it to be triggered after |timeout|.</li>
-        </ol>
-      </p>
-
-      <p>To <dfn data-lt="processes current session">process current session</dfn>, run these steps:
-        <ol>
-          <li>[=Send payment=] given the [=currently processed session=].</li>
-          <li>[=Schedule next session processing=] given the [=currently processed session=].</li>
-        </ol>
-      </p>
-
-      <p>
-        To <dfn>set next session</dfn> given an optional {{MonetizationSession}} |session|,
-        run these steps:
-        <ol>
-          <li>If the [=active session list=] is empty, set the
-              [=currently processed session=] to null.</li>
-          <li>Otherwise, |session| is null or if there are no sessions following |session|, set the
-              [=currently processed session=] to the first session in the
-              [=active session list=].</li>
-          <li>Otherwise, set the [=currently processed session=] to the session
-              following |session| in the [=active session list=].</li>
-        </ol>
-      </p>
-
-      <p>
-        To <dfn data-lt="sends payments">send payment</dfn> given a
-        {{MonetizationSession}} as |session|, run these steps:
-        <ol>
-          <li>Let |userWalletDetails| be the [=user wallet details=].</li>
-          <li>Let |userWalletAddress| be |userWalletDetails|`.address`.</li>
-          <li>Let |accessToken| be |userWalletDetails|`.accessToken`.</li>
-          <li>Let |paymentBucketURI| be |session|`.paymentBucketURI`.</li>
-          <li>Let |amount| be the [=computed payment amount=].</li>
-          <li>Let |accessCode| be |session|`.accessCode`.</li>
-          <li>Let |accessScale| be |session|`.accessScale`.</li>
-          <li><dfn>Outgoing payment step</dfn>. Send [=outgoing payment request=] given
-            |accessToken|, |userWalletDetails|, |paymentBucketURI|, |amount|, |assetCode|, |assetScale|.</li>
-          <li>If the request from the [=outgoing payment step=] fails, then return.</li>
-          <li>Let |linkElement:HTMLLinkElement| be |session|`.linkElement`.</li>
-          <li>Let |websiteWalletAddress| be |session|`.walletAddress`.</li>
-          <li>Set |amount| be the amount from the response of the [=outgoing payment step=].</li>
-          <li>Set |assetCode| be the [=asset code=] from the response of the
-            [=outgoing payment step=].</li>
-          <li>Set |assetScale| be the [=asset scale=] from the response of the
-            [=outgoing payment step=].</li>
-          <li>Fire a <a href="https://webmonetization.org/specification/#dom-monetizationevent">
-            `MonetizationEvent`</a> event on the |linkElement| element, initialized with the
-            <a href="https://webmonetization.org/specification/#dom-monetizationeventinit">
-            `MonetizationEventInit`</a> structure, having the fields `amount` set to
-            |amount|, `assetCode` set to |assetCode|, `assetScale` set to |assetScale|,
-            `paymentPointer` set to |websiteWalletAddress|, and `incomingPayment` set
-            to |paymentBucketURI|.</li>
-        </ol>
-      </p>
-
-      <h3>Session suspension</h3>
-
-      <p>
-        To <dfn data-lt="session is suspended">suspend session</dfn> given a
-        {{MonetizationSession}} as |session|, run these steps:
-        <ol>
-          <li>If |session| is the [=currently processed session=], then
-            <ol>
-              <Li>Cancel the [=session processing runnable=] if any.</Li>
-              <li>[=Schedule next session processing=] given |session|.
-            </ol>
-          </li>
-          <li>Remove |session| from the [=active session list=].</li>
-        </ol>
-      </p>
-    </section>
-
-    <section id="questions">
-      <h2>Open questions</h2>
+    <p>
+      To <dfn data-lt="sessions are initiated">initiate sessions scoped to</dfn>
+      the given {{HTMLElement}} as |root|, run these steps:
       <ul>
-        <li>Look for `FIXME` labels.</li>
+        <li>Let |linkElements| be a {{NodeList}} of all HTML [^link^] elements with
+          the `rel="monetization"` attribute from the children of the |root|.</li>
+        <li>For each element from |linkElements|, [=initiate a session=].</li>
       </ul>
-    </section>
-  </body>
+    </p>
+
+    <p>
+      To <dfn data-lt="session is initiated">initiate a session</dfn> for a `monetization`
+      [^link^] element, run these steps:
+      <ol>
+        <li>Let |linkElement:HTMLLinkElement| be the given [^link^] element.</li>
+        <li>Let |document:Document| be the {{Node/ownerDocument}} of the |linkElement|.</li>
+        <li>If [=monetization is disabled=] given the |document|, then return.</li>
+
+        <li>Let |websiteWalletAddress| be the value of the `href` attribute of |linkElement|.</li>
+        <li>If [=monetization is disabled for a wallet=] given the |document| and |websiteWalletAddress|, then return.</li>
+
+        <li><dfn>Get website wallet address step</dfn>. Send
+          [=get wallet address request=] to |websiteWalletAddress|.</li>
+        <li>If the [=get website wallet address step=] request fails, fire an `error`
+          event on |linkElement| and return.</li>
+
+        <li>Fire `load` event on |linkElement|.</li>
+
+        <li>Let |authServer| be the [=authentication server=] from the
+          [=get website wallet address step=] response.</li>
+        <li><dfn>Incoming payment grant step</dfn>. Send an
+          [=incoming payment grant request=] to |authServer|, with |websiteWalletAddress|
+          and |amount| (FIXME).</li>
+        <li>If the [=incoming payment grant step=] request fails, return.</li>
+
+        <li>Let |resourceServer| be the [=resource server=] from the
+          [=get website wallet address step=] response.</li>
+        <li>Let |accessToken| be the [=access token=] from the [=incoming payment grant step=].</li>
+        <li><dfn>Incoming payment step</dfn>. Send an [=incoming payment request=] to
+          |resourceServer|, with |accessToken| and |websiteWalletAddress|.</li>
+        <li>If the [=incoming payment step=] request fails, return.</li>
+
+        <li>Let |continuationURI| be the [=continuation URI=] from the
+          [=incoming payment grant step=] response.</li>
+        <li>Revoke the grant obtained at the [=incoming payment grant step=] by sending a
+          [=cancel grant request=] to |continuationURI| using |accessToken|.</li>
+
+        <li>Let |assetCode| be the [=asset code=] from the
+          [=get website wallet address step=] response.</li>
+        <li>Let |assetScale| be the [=asset scale=] from the
+          [=get website wallet address step=] response.</li>
+        <li>Let |paymentBucketURI| be the [=payment bucket=] from the
+          [=incoming payment step=] response.</li>
+
+        <li>Let |session:MonetizationSession| be a new {{MonetizationSession}} object
+          with `linkElement` set to |linkElement|,
+          `walletAddress` set to |websiteWalletAddress|, `assetCode` set to |assetCode|,
+          `assetScale` set to |assetScale|, and `paymentBucketURI` set to |paymentBucketURI|.
+        </li>
+
+        <li>Append the |session| to the [=active session list=].
+
+        <li>
+          If the [=active session list=] length is 1, [=start session loop=].
+        </li>
+      </ol>
+    </p>
+
+    <h3>Payment distribution</h3>
+
+    <div class="note">
+      <p>
+        The payment algorithm distributes payments equally between
+        [=website wallets=] of the [=active sessions=], with payments made at equal time
+        intervals, defaulting to `1s` if a website wallet can accept the given amount.
+        If the website wallet's cannot accommodate the default amount, the payment
+        is delayed by a number of seconds to accommodate the increased amount as
+        defined by the [=asset scale=] of the [=website wallet=].
+      </p>
+      <p>
+        As soon as the first session is added to the [=active sessions=], each session
+        from the [=active sessions=] is processed one by one, with payments sent accordingly,
+        and the processing continues until the [=active sessions=] list is empty.
+      </p>
+    </div>
+
+    <div class="note">
+      <p>
+        Website wallets with an asset code different from the user wallet's asset
+        code are <b>ignored</b> until the exchange rate issue is resolved.
+      </p>
+      <p>
+        The current design suggests that the browser must rely on third-party currency
+        conversion services to estimate the payment amount for the website wallet.
+        However, handling the conversion rate seems like a natural part of OpenPayments,
+        as it removes the need for the browser to estimate exchange rates, leaving this
+        task to the wallet provider that performs the actual currency conversion.
+        This approach also eliminates the browser's dependency on third-party services,
+        resulting in a simpler design.
+      </p>
+    </div>
+
+    <p>
+      A <dfn>session loop</dfn> is an asynchronous process that iterates through
+      the [=active sessions=], during which the browser [=sends payments=]
+      to the [=website wallet=] associated with each session from the [=active sessions=].
+    </p>
+
+    <p>
+      A <dfn>currently processed session</dfn> is a {{MonetizationSession}} object from the
+      [=active sessions=] that the browser is processing within the [=session loop=].
+    </p>
+
+    <p>
+      A <dfn>session loop timeout</dfn> is the delay before the browser
+      [=sends payment=] to the [=website wallet=] of the [=currently processed session=]
+      and then proceeds to the next session from the [=active session list=].
+    </p>
+
+    <p>
+      A <dfn>payment amount</dfn> is the payment made to a [=website wallet=] of
+      the [=currently processed session=].
+    </p>
+
+    <p>
+      To compute [=payment amount=] and [=session loop timeout=]</dfn>
+      for the [=currently processed session=] given as |session|, run these steps:
+      <ul>
+        <li>Let |defaultTimeout| be `1`.</li>
+        <li>Let |userWalletDetails| be the [=user wallet details=].</li>
+        <li>Let |defaultAmount| be `userWalletDetails.payRate / 3600`.</li>
+        <li>Let |assetScale| be `session.assetScale`.</li>
+        <li>Let |minimalAmount| be `1 / Math.pow(10, |assetScale|)` using {{Math/pow()}}.</li>
+
+        <li>Then <dfn data-lt="computed payment amount">payment amount is computed</dfn> as:<br>
+          <code>max(|defaultAmount|, minimalAmount)</code> using {{Math/max()}}.
+        </li>
+
+        <li>Then <dfn data-lt="computed session loop timeout">session loop timeout is computed</dfn> as:<br>
+          <code>max(|defaultTimeout|, ceil(|minimalAmount| / |defaultAmount|))</code>
+          using {{Math/ceil(x)}}, {{Math/max()}}.
+        </li>
+      </ul>
+    </p>
+
+    <h3>Session loop</h3>
+
+    <p>
+      To <dfn>start session loop</dfn>, [=schedule next session processing=] given null.
+    </p>
+
+    <p>A <dfn>session processing runnable</dfn> is a function called
+      in [=session loop timeout=] which [=processes current session=].</p>
+
+    <p>
+      To <dfn>schedule next session processing</dfn> given an optional |session|, run these steps:
+      <ol>
+        <li>[=Set next session=] given the |session|.</li>
+        <li>Let |timeout| be the [=computed session loop timeout=].</li>
+        <li>Create a [=session processing runnable=]
+          and schedule it to be triggered after |timeout|.</li>
+      </ol>
+    </p>
+
+    <p>To <dfn data-lt="processes current session">process current session</dfn>, run these steps:
+      <ol>
+        <li>[=Send payment=] given the [=currently processed session=].</li>
+        <li>[=Schedule next session processing=] given the [=currently processed session=].</li>
+      </ol>
+    </p>
+
+    <p>
+      To <dfn>set next session</dfn> given an optional {{MonetizationSession}} |session|,
+      run these steps:
+      <ol>
+        <li>If the [=active session list=] is empty, set the
+          [=currently processed session=] to null.</li>
+        <li>Otherwise, |session| is null or if there are no sessions following |session|, set the
+          [=currently processed session=] to the first session in the
+          [=active session list=].</li>
+        <li>Otherwise, set the [=currently processed session=] to the session
+          following |session| in the [=active session list=].</li>
+      </ol>
+    </p>
+
+    <p>
+      To <dfn data-lt="sends payments">send payment</dfn> given a
+      {{MonetizationSession}} as |session|, run these steps:
+      <ol>
+        <li>Let |userWalletDetails| be the [=user wallet details=].</li>
+        <li>Let |userWalletAddress| be |userWalletDetails|`.address`.</li>
+        <li>Let |accessToken| be |userWalletDetails|`.accessToken`.</li>
+        <li>Let |paymentBucketURI| be |session|`.paymentBucketURI`.</li>
+        <li>Let |amount| be the [=computed payment amount=].</li>
+        <li>Let |accessCode| be |session|`.accessCode`.</li>
+        <li>Let |accessScale| be |session|`.accessScale`.</li>
+        <li><dfn>Outgoing payment step</dfn>. Send [=outgoing payment request=] given
+          |accessToken|, |userWalletDetails|, |paymentBucketURI|, |amount|, |assetCode|, |assetScale|.</li>
+        <li>If the request from the [=outgoing payment step=] fails, then return.</li>
+        <li>Let |linkElement:HTMLLinkElement| be |session|`.linkElement`.</li>
+        <li>Let |websiteWalletAddress| be |session|`.walletAddress`.</li>
+        <li>Set |amount| be the amount from the response of the [=outgoing payment step=].</li>
+        <li>Set |assetCode| be the [=asset code=] from the response of the
+          [=outgoing payment step=].</li>
+        <li>Set |assetScale| be the [=asset scale=] from the response of the
+          [=outgoing payment step=].</li>
+        <li>Fire a <a href="https://webmonetization.org/specification/#dom-monetizationevent">
+            `MonetizationEvent`</a> event on the |linkElement| element, initialized with the
+          <a href="https://webmonetization.org/specification/#dom-monetizationeventinit">
+            `MonetizationEventInit`</a> structure, having the fields `amount` set to
+          |amount|, `assetCode` set to |assetCode|, `assetScale` set to |assetScale|,
+          `paymentPointer` set to |websiteWalletAddress|, and `incomingPayment` set
+          to |paymentBucketURI|.</li>
+      </ol>
+    </p>
+
+    <h3>Session suspension</h3>
+
+    <p>
+      To <dfn data-lt="session is suspended">suspend session</dfn> given a
+      {{MonetizationSession}} as |session|, run these steps:
+      <ol>
+        <li>If |session| is the [=currently processed session=], then
+          <ol>
+            <Li>Cancel the [=session processing runnable=] if any.</Li>
+            <li>[=Schedule next session processing=] given |session|.
+          </ol>
+        </li>
+        <li>Remove |session| from the [=active session list=].</li>
+      </ol>
+    </p>
+  </section>
+
+  <section id="questions">
+    <h2>Open questions</h2>
+    <ul>
+      <li>Look for `FIXME` labels.</li>
+    </ul>
+  </section>
+</body>
+
 </html>
