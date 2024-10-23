@@ -804,6 +804,7 @@
       To <dfn>schedule next session processing</dfn> given an optional |session|, run these steps:
       <ol>
         <li>[=Set next session=] given the |session|.</li>
+        <li>If the [=currently processed session=] is null, then return.</li>
         <li>Let |timeout| be the [=computed session loop timeout=].</li>
         <li>Create a [=session processing runnable=]
           and schedule it to be triggered after |timeout|.</li>
