@@ -194,12 +194,7 @@
     <h3>Terms</h3>
 
     <p><dfn>Wallet page</dfn> refers to the browser's UI for managing [=user wallets=], accessible via a browser specific URI. In Chrome, this is located at `chrome://webmonetization/wallet`.</p>
-
     <p><dfn>Redirect URI</dfn> is an URL the user is redirected to in order to accept or decline the [=outgoing payment grant request=] when connecting a [=user wallet=] to the browser.</p>
-
-    <p><dfn>Interact nonce</dfn> is a key used to verify the [=outgoing payment grant request=].</p>
-
-    <p><dfn>Interact reference</dfn> is a key identifying the interactive [=outgoing payment grant request=].</p>
 
     <h3>Open Payment requests</h3>
 
@@ -213,35 +208,29 @@
       The |clientNonce| is randomly generated integer. The request body is formatted as follows:
       <pre class="nohighlight">
         {
-            access_token: {
-              access: [{
-                type: "outgoing-payment",
-                actions: ["create"],
-                identifier: |userWalletAddress|
-              }],
+          access_token: {
+            access: [{
+              type: "outgoing-payment",
+              actions: ["create"],
+              identifier: |websiteWalletAddress|
               limits: {
-                debitAmount: {
-                  amount: |amount|
-                }
+                debitAmount: |amount|
               },
-              client: |userWalletAddress|,
-              interact: {
-              start: ["redirect"],
-              finish: {
-                uri: |walletPageUri|,
-                method: "redirect",
-                nonce: |clientNonce|
-              }
-            }
+            }],
+          },
+          client: |userWalletAddress|,
+          interact: {
+            start: ["redirect"],
           }
         }
         </pre>
       The response format is:
+      <!-- TODO: Transform to Web IDL -->
       <pre class="nohighlight">
         {
           interact: {
             redirect: string, // <a href="#dfn-redirect-uri">redirect URI</a>
-            finish: string // <a href="#dfn-interact-nonce">interact nonce</a>
+            finish: string
           },
           continue: {
             access_token: {
@@ -254,7 +243,7 @@
         </pre>
     </p>
 
-    <p><dfn>Continuation grant request</dfn> is an <a href="https://openpayments.dev/apis/auth-server/operations/post-continue/">OP request</a> to the [=authentication server=] to continue using a grant. It takes an [=access token=] in the authentification header and an [=interact reference=] identifying the [=outgoing payment grant request=] in the request body. The response format is
+    <p><dfn>Continuation grant request</dfn> is an <a href="https://openpayments.dev/apis/auth-server/operations/post-continue/">OP request</a> to the [=authentication server=] to continue using a grant. It takes an [=access token=] in the authentification header.
       <pre class="nohighlight">
         {
           access_token: {
@@ -324,44 +313,7 @@
 
         <li>Let |redirectUri| be [=redirect URI=] from the response of the [=outgoing payment grant step=].</li>
 
-        <li>Let |interactNonce| be [=interact nonce=] from the response of the [=outgoing payment grant step=].</li>
-
-        <li><dfn>User wallet authorization step</dfn>. Load the |redirectUri| in the current tab, which should display a page where the user is prompted to click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. After authorization, the page should redirect the user to the |walletPageUri| with two query parameters: the [=interact reference=] provided as the `interact_ref` parameter, and a string `hash`.</li>
-
-        <li>Let |verifyInteractionHash| be an algorithm that performs the following steps given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash|:
-          <ol>
-            <li>Let |grantEndpoint| be a concatenation of the |authServer| origin and "/".</li>
-            <li>Let |data| be a string formed by concatenating |clientNonce|, |interactNonce|, |interactRef|, and |grantEndpoint|, each separated by a newline character ("\n").</li>
-            <li>Encode |data| using the {{TextEncoder/encode(input)}}.</li>
-            <li>Compute the SHA-256 digest of the encoded |data| using the {{SubtleCrypto/digest()}}.</li>
-            <li>Convert the resulting digest to a base64-encoded string, |calculatedHash|.</li>
-            <li>If |calculatedHash| does not match |hash|, throw an error indicating an invalid interaction hash.</li>
-          </ol>
-          <pre class="example">
-                  async verifyInteractionHash({
-                    clientNonce,
-                    interactRef,
-                    interactNonce,
-                    hash,
-                    authServer
-                  }: VerifyInteractionHashParams): Promise<void> {
-                    const grantEndpoint = new URL(authServer).origin + '/'
-                    const data = new TextEncoder().encode(
-                      `${clientNonce}\n${interactNonce}\n${interactRef}\n${grantEndpoint}`
-                    )
-
-                    const digest = await crypto.subtle.digest('SHA-256', data)
-                    const calculatedHash = btoa(
-                      String.fromCharCode.apply(null, new Uint8Array(digest))
-                    )
-                    return calculatedHash == hash
-                  }
-                </pre>
-        </li>
-        </li>
-        <li>Let |interactRef| be [=interact reference=] defined by the `interact_ref` query parameter of the wallet page loaded during the [=user wallet authorization step=].</li>
-        <li>Let |hash| be the value of the `hash` query parameter in the wallet page loaded during the [=user wallet authorization step=].</li>
-        <li>If the result of running the |verifyInteractionHash| algorithm given |authServer|, |clientNonce|, |interactRef|, |interactNonce|, and |hash| is false, then report the failure to the user by showing a message on the [=wallet page=] and exit.</li>
+        <li>Load the |redirectUri| in the current tab, which should display a page where the user is prompted to click an accept button to authorize the [=wallet provider=] to connect the [=user wallet=] with the browser. 
 
         <li>Let |accessToken| be the [=access token=] from the response of the [=outgoing payment grant step=].</li>
         <li>
